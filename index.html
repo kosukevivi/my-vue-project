@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+  <title>URL作成</title>
+</head>
+<body>
+  <div id="app">
+    <div class="sinceDate">
+      <select type="number" name="year" v-model="urlParameter.since.year">
+        <option v-for="n in 17" :value="n + 2005" @change="getSinceDays">
+          {{ n + 2005 }}
+        </option>
+      </select>年
+      <select type="number" name="month" v-model="urlParameter.since.month" @change="getSinceDays">
+        <option v-for="n in 12" :value="n">
+          {{ n }}
+        </option>
+      </select>月
+      <select type="number" name="day" v-model="urlParameter.since.day">
+        <option v-for="n in sinceDaysMax" :value="n">
+          {{ n }}
+        </option>
+      </select>日
+      <br/>
+      <select type="number" name="hour" v-model="urlParameter.since.hour">
+        <option v-for="n in 24" :value="n - 1">
+          {{ n - 1 }}
+        </option>
+      </select>時
+      <select type="number" name="minute" v-model="urlParameter.since.minute">
+        <option v-for="n in 60" :value="n - 1">
+          {{ n - 1 }}
+        </option>
+      </select>分から
+    </div>
+    <div class="untilDate">
+      <select type="number" name="year" v-model="urlParameter.until.year">
+        <option v-for="n in 17" :value="n + 2005" @change="getUntilDays">
+          {{ n + 2005 }}
+        </option>
+      </select>年
+      <select type="number" name="month" v-model="urlParameter.until.month" @change="getUntilDays">
+        <option v-for="n in 12" :value="n">
+          {{ n }}
+        </option>
+      </select>月
+      <select type="number" name="day" v-model="urlParameter.until.day">
+        <option v-for="n in untilDaysMax" :value="n">
+          {{ n }}
+        </option>
+      </select>日
+      <br/>
+      <select type="number" name="hour" v-model="urlParameter.until.hour">
+        <option v-for="n in 24" :value="n - 1">
+          {{ n - 1 }}
+        </option>
+      </select>時
+      <select type="number" name="minute" v-model="urlParameter.until.minute">
+        <option v-for="n in 60" :value="n - 1">
+          {{ n - 1 }}
+        </option>
+      </select>分までの
+    </div>
+    <div class="searchWord">
+      <input type="text" v-model="urlParameter.searchWord">を含むツイート
+    </div>
+    <div class="replies-check">
+      <label for="replies-check">
+        <input type="checkbox" id="replies-check" v-model="removeReplies">リプライを含まない
+      </label>
+    </div>
+    <button @click="onClick">URL作成</button>
+  </div>
+</body>
+<script>
+  new Vue({
+    el: "#app",
+    data: {
+      baseUrl: 'https://mobile.twitter.com/search?q=filter%3Afollows',
+      searchQuery: '',
+      urlParameter: {
+        since: {
+          year: '',
+          month: '',
+          day: '',
+          hour: '',
+          minute: ''
+        },
+        until: {
+          year: '',
+          month: '',
+          day: '',
+          hour: '',
+          minute: ''
+        },
+        searchWord: ''
+      },
+      sinceDaysMax: '',
+      untilDaysMax: '',
+      removeReplies: false
+    },
+    methods: {
+      onClick() {
+        const copyURL = this.createSearchUrl()
+        navigator.clipboard.writeText(copyURL)
+        .then(() => {
+            alert("URLをクリップボードにコピーしました。")
+        })
+        .catch(e => {
+          alert(e)
+        })
+      },
+      createSearchUrl() {
+        let searchUrl = this.baseUrl
+        // 日時をURLの形式に連結する
+        let sinceDateParam = '%20since%3A' + this.createDateQuery(this.urlParameter.since)
+        let untilDateParam = '%20until%3A' + this.createDateQuery(this.urlParameter.until)
+        if(this.removeReplies) {
+          searchUrl += '%20-filter%3Areplies'
+        }
+        if(this.searchWord) {
+          searchUrl += '%20' + encodeURIComponent(this.searchWord)
+        }
+        searchUrl += sinceDateParam + untilDateParam + '&src=typed_query&f=live'
+        return searchUrl
+      },
+      getSinceDays() {
+        this.sinceDaysMax = new Date(this.urlParameter.since.year, this.urlParameter.since.month, 0).getDate()
+      },
+      getUntilDays() {
+        this.untilDaysMax = new Date(this.urlParameter.until.year, this.urlParameter.until.month, 0).getDate()
+      },
+      createDateQuery(date) {
+        let y = date.year
+        let m = this.zeroPadding(date.month)
+        let d = this.zeroPadding(date.day)
+        let formatDate = [y, m, d].join('-')
+        let dateQuery = formatDate + '_' + this.zeroPadding(date.hour) + '%3A' + this.zeroPadding(date.minute) + '%3A00_JST'
+        return dateQuery
+      },
+      zeroPadding(num) {
+        return ('0' + num).slice(-2)
+      }
+    }
+  })
+</script>
+<style>
+  label {
+    font-weight: bold;
+  }
+  label, input[type='checkbox'] {
+    cursor: pointer;
+}
+</style>
+</html>
